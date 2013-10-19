@@ -1,8 +1,7 @@
 shiny_stepwise
 ==============
+All you have to do to run this visualization is open R and type these two lines:
 
-Peering into the black box: an interactive visualization of forward stepwise regression
-
-Run in R by typing:
 install.packages('shiny')
+
 runGitHub('shiny_stepwise', 'justmytwospence')
