@@ -1,15 +1,6 @@
 #### Load data, functions, and packages ####
 library(shiny)
 library(ggplot2)
-library(extrafont)
-theme_xkcd <- theme(
-  panel.background = element_rect(fill="white"),
-  axis.ticks = element_line(colour=NA),
-  panel.grid = element_line(colour="white"),
-  #axis.text.y = element_text(colour=NA),
-  axis.text.x = element_text(colour="black"),
-  text = element_text(size=16, family="Humor Sans")
-)
 source('stepwise.R')
 bodyfat <- dget('bodyfat.dput')
 
@@ -24,24 +15,24 @@ shinyServer(function(input, output) {
            ".001" = .001)
   })
   
-  # Display the potential variable checkboxes according to the
-  # variables that are present in the dataset
-  output$independents <- renderUI({
-    colnames <- names(bodyfat)
-    checkboxGroupInput("independents", 
-                       "Choose potential independent variables", 
-                       choices  = colnames,
-                       selected = colnames)
-  })
-  
   # Display a dropdown menu for choosing the dependent variable,
   # also according to variables present in the dataset
   output$dependent <- renderUI({
     colnames <- names(bodyfat)
     selectInput("dependent", 
                 "Dependent variable", 
-                colnames,
+                choices = colnames,
                 selected = "BODYFAT")
+  })
+  
+  # Display the potential variable checkboxes according to the
+  # variables that are present in the dataset
+  output$independents <- renderUI({
+    colnames <- names(bodyfat)
+    checkboxGroupInput("independents", 
+                       "Choose potential independent variables", 
+                       choices  = setdiff(colnames, input$dependent),
+                       selected = setdiff(colnames, input$dependent))
   })
   
   # Perform the step-wise regression
@@ -79,8 +70,7 @@ shinyServer(function(input, output) {
       ylim(scaling.min, scaling.max) + 
       ggtitle('Betas for the current iteration') +
       geom_hline(yintercept = 0) +
-      coord_flip() +
-      theme_xkcd
+      coord_flip()
     print(p)
   })
 })
