@@ -20,7 +20,7 @@ shinyServer(function(input, output) {
   output$dependent <- renderUI({
     colnames <- names(bodyfat)
     selectInput("dependent", 
-                "Dependent variable", 
+                "Dependent variable:", 
                 choices = colnames,
                 selected = "BODYFAT")
   })
@@ -30,13 +30,13 @@ shinyServer(function(input, output) {
   output$independents <- renderUI({
     colnames <- names(bodyfat)
     checkboxGroupInput("independents", 
-                       "Choose potential independent variables", 
+                       "Prospective independent variables:", 
                        choices  = setdiff(colnames, input$dependent),
                        selected = setdiff(colnames, input$dependent))
   })
   
   # Perform the step-wise regression
-  steps <- reactive({
+  traced <- reactive({
     stepforward(y = input$dependent, 
                 x = setdiff(input$independents, input$dependent),
                 data = bodyfat,
@@ -48,29 +48,36 @@ shinyServer(function(input, output) {
   output$sliderUI <- renderUI({ 
     sliderInput("index", "Iteration:", 
                 min = 1, 
-                max = length(steps()[[2]]),
+                max = length(traced()),
                 step = 1,
                 value = 1)
   })
   
   # Print the next-most correlated variable that will be added next
   output$next.up <- renderPrint({
-    cat(steps()[[2]][[input$index + 2]])
+    cat(traced()[[input$index]]$next.up)
+    #traced()[[input$index]][[1]]
   })
   
   # Create a bar plot of the beta values and update every time
-  # the alpha changes or the iteration is changed
+  # the model is updated
   output$betaplot <- renderPlot({
-    scaling.max <- max(steps()[[1]]$Beta)
-    scaling.min <- min(steps()[[1]]$Beta)
-    coefs <- subset(steps()[[1]], Iteration == input$index)
-    p <- ggplot(data = coefs, 
-                aes(x = Coefficient, y = Beta)) + 
+    scaling.max <- max(sapply(traced(), function(x) {max(x$steps$Beta)}))
+    scaling.min <- min(sapply(traced(), function(x) {min(x$steps$Beta)}))
+    df <- traced()[[input$index]][[1]]
+    b <- ggplot(data = df, 
+                aes(x = Coefficient,
+                    y = Beta)) + 
       geom_bar(stat = 'identity') + 
       ylim(scaling.min, scaling.max) + 
       ggtitle('Betas for the current iteration') +
       geom_hline(yintercept = 0) +
       coord_flip()
-    print(p)
+    print(b)
+  })
+  
+  output$pplot <- renderPlot({
+    all.p <- sapply(traced(), function(x) {x$p.value})
+    p <- qplot(p)
   })
 })

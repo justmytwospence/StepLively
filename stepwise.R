@@ -14,47 +14,58 @@ parcor <- function(x, y, data, covariates) {
 }
 
 stepforward <- function(y, x, data, alpha) {
-  count <- 0
+  count <- 1
+  p <- 0
+  terms <- NULL
+  
   # Initialization with the null model
   new.fit <- lm(reformulate(response = y,
                             termlabels = '1'),
                 data = data)
+  correlations <- sapply(setdiff(x, terms),
+                         parcor,
+                         y = y,
+                         covariates = terms,
+                         data = data)
+  next.up <- x[which.max(abs(correlations))]
   
-  # Start monitoring the steps
-  steps <- list()
-  next.ups <- list(next.up = c())
-  terms <- c()
+  # Trace the steps
+  trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
+                                            'Coefficient' = names(coef(new.fit))),
+                         next.up = next.up,
+                         p.value = p)
+  
+  # Prep for next iteration
+  terms <- next.up
+  old.fit <- new.fit
+  count <- count + 1
   
   # Add next-most correlated variable and see if it helps the model
-  p <- 0
   while (p < alpha) {
-    count <- count + 1
-    current.fit <- new.fit
+    new.fit <- lm(reformulate(response = y,
+                              termlabels = terms),
+                  data = data)
+    p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
     correlations <- sapply(setdiff(x, terms),
                            parcor,
                            y = y,
                            covariates = terms,
                            data = data)
     next.up <- setdiff(x, terms)[which.max(abs(correlations))]
-    terms <- c(terms, next.up)
-    new.fit <- lm(reformulate(response = y,
-                              termlabels = terms),
-                  data = data)
-    p <- anova(current.fit, new.fit)$'Pr(>F)'[2]
     
     # Monitor the steps
-    if (p < alpha) {
-      steps <- rbind(steps, 
-                 list(list('Iteration' = count,
-                           'Beta' = coef(new.fit)[-1],
-                           'Coefficient' = names(coef(new.fit)[-1]))))
-      next.ups <- c(next.ups, next.up)
-    }
+    trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
+                                              'Coefficient' = names(coef(new.fit))),
+                           next.up = next.up,
+                           p.value = p)
     
-    if (length(setdiff(x, terms)) == 0) {break} # Manually break if you ended up using all your variables
+    # Prep for next iteration
+    terms <- c(terms, next.up)
+    old.fit <- new.fit
+    count <- count + 1
+    
+    # Manually break if you ended up using all your variables
+    if (length(setdiff(x, terms)) == 0) {break}
   }
-  
-  return(
-    list(do.call(rbind, lapply(steps, as.data.frame)),
-         next.ups))
+  return(trace)
 }
