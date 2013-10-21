@@ -60,7 +60,8 @@ shinyServer(function(input, output) {
     b <- ggplot(data = df.b, 
                 aes(x = Coefficient,
                     y = Beta)) + 
-      geom_bar(stat = 'identity') + 
+      geom_bar(stat = 'identity',
+               fill = 'darkblue') + 
       ylim(scaling.min, scaling.max) + 
       geom_hline(yintercept = 0) +
       coord_flip()
@@ -68,13 +69,13 @@ shinyServer(function(input, output) {
   })
   
   output$pplot <- renderPlot({
-    df.p <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$p.value}))
+    df.p <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$f.p}))
     p <- ggplot(data = df.p,
                 aes(x = seq_along(P.value), 
                     y = P.value)) +
       geom_line(colour = 'red',
                 size = 3) +
-      coord_cartesian(ylim = c(0, alpha()))
+      coord_cartesian(ylim = c(-alpha()/100, alpha()))
     print(p)
   })
   

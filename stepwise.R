@@ -15,13 +15,14 @@ parcor <- function(x, y, data, covariates) {
 
 stepforward <- function(y, x, data, alpha) {
   count <- 1
-  p <- 0
+  f.p <- 0
   terms <- NULL
   
   # Initialization with the null model
   new.fit <- lm(reformulate(response = y,
                             termlabels = '1'),
                 data = data)
+  model.p <- anova(new.fit)$'Pr(>F)'[2]
   correlations <- sapply(setdiff(x, terms),
                          parcor,
                          y = y,
@@ -30,10 +31,12 @@ stepforward <- function(y, x, data, alpha) {
   next.up <- x[which.max(abs(correlations))]
   
   # Trace the steps
-  trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
+  traced <- list()
+  traced[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
                                             'Coefficient' = names(coef(new.fit))),
                          next.up = next.up,
-                         p.value = p,
+                         model.p = model.p,
+                         f.p = model.p,
                          model = summary(new.fit))
   
   # Prep for next iteration
@@ -42,11 +45,12 @@ stepforward <- function(y, x, data, alpha) {
   count <- count + 1
   
   # Add next-most correlated variable and see if it helps the model
-  while (p < alpha) {
+  while (f.p < alpha) {
     new.fit <- lm(reformulate(response = y,
                               termlabels = terms),
                   data = data)
-    p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
+    f.p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
+    model.p <- anova(new.fit)$'Pr(>F)'[2]
     correlations <- sapply(setdiff(x, terms),
                            parcor,
                            y = y,
@@ -55,10 +59,11 @@ stepforward <- function(y, x, data, alpha) {
     next.up <- setdiff(x, terms)[which.max(abs(correlations))]
     
     # Monitor the steps
-    trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
+    traced[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
                                               'Coefficient' = names(coef(new.fit))),
                            next.up = next.up,
-                           p.value = p,
+                           model.p = model.p,
+                           f.p = f.p,
                            model = summary(new.fit))
     
     # Prep for next iteration
@@ -69,5 +74,5 @@ stepforward <- function(y, x, data, alpha) {
     # Manually break if you ended up using all your variables
     if (length(setdiff(x, terms)) == 0) {break}
   }
-  return(trace)
+  return(traced)
 }
