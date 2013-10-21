@@ -32,7 +32,7 @@ shinyServer(function(input, output) {
     checkboxGroupInput("independents", 
                        "Prospective independent variables:", 
                        choices  = setdiff(colnames, input$dependent),
-                       selected = setdiff(colnames, input$dependent))
+                       selected = setdiff(colnames, c('WEIGHT', 'DENSITY', 'IDNO', input$dependent)))
   })
   
   # Perform the step-wise regression
@@ -47,16 +47,8 @@ shinyServer(function(input, output) {
   # the step-wise regression required
   output$sliderUI <- renderUI({ 
     sliderInput("index", "Iteration:", 
-                min = 1, 
-                max = length(traced()),
-                step = 1,
-                value = 1)
-  })
-  
-  # Print the next-most correlated variable that will be added next
-  output$next.up <- renderPrint({
-    cat(traced()[[input$index]]$next.up)
-    #traced()[[input$index]][[1]]
+                min = 1, max = length(traced()), step = 1, value = 1,
+                animate = TRUE)
   })
   
   # Create a bar plot of the beta values and update every time
@@ -64,20 +56,35 @@ shinyServer(function(input, output) {
   output$betaplot <- renderPlot({
     scaling.max <- max(sapply(traced(), function(x) {max(x$steps$Beta)}))
     scaling.min <- min(sapply(traced(), function(x) {min(x$steps$Beta)}))
-    df <- traced()[[input$index]][[1]]
-    b <- ggplot(data = df, 
+    df.b <- traced()[[input$index]][[1]]
+    b <- ggplot(data = df.b, 
                 aes(x = Coefficient,
                     y = Beta)) + 
       geom_bar(stat = 'identity') + 
       ylim(scaling.min, scaling.max) + 
-      ggtitle('Betas for the current iteration') +
       geom_hline(yintercept = 0) +
       coord_flip()
     print(b)
   })
   
   output$pplot <- renderPlot({
-    all.p <- sapply(traced(), function(x) {x$p.value})
-    p <- qplot(p)
+    df.p <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$p.value}))
+    p <- ggplot(data = df.p,
+                aes(x = seq_along(P.value), 
+                    y = P.value)) +
+      geom_line(colour = 'red',
+                size = 3) +
+      coord_cartesian(ylim = c(0, alpha()))
+    print(p)
+  })
+  
+  # Print the next-most correlated variable that will be added next
+  output$next.up <- renderPrint({
+    cat(traced()[[input$index]]$next.up)
+  })
+  
+  # Print the current model
+  output$model <- renderTable({
+    traced()[[input$index]]$model
   })
 })

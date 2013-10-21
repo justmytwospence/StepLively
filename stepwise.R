@@ -33,7 +33,8 @@ stepforward <- function(y, x, data, alpha) {
   trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
                                             'Coefficient' = names(coef(new.fit))),
                          next.up = next.up,
-                         p.value = p)
+                         p.value = p,
+                         model = summary(new.fit))
   
   # Prep for next iteration
   terms <- next.up
@@ -57,7 +58,8 @@ stepforward <- function(y, x, data, alpha) {
     trace[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
                                               'Coefficient' = names(coef(new.fit))),
                            next.up = next.up,
-                           p.value = p)
+                           p.value = p,
+                           model = summary(new.fit))
     
     # Prep for next iteration
     terms <- c(terms, next.up)
