@@ -32,17 +32,10 @@ stepforward <- function(y, x, data, alpha) {
   
   # Trace the steps
   traced <- list()
-  traced[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
-                                            'Coefficient' = names(coef(new.fit))),
-                         next.up = next.up,
-                         model.p = model.p,
-                         f.p = model.p,
-                         model = summary(new.fit))
   
   # Prep for next iteration
   terms <- next.up
   old.fit <- new.fit
-  count <- count + 1
   
   # Add next-most correlated variable and see if it helps the model
   while (f.p < alpha) {
@@ -59,12 +52,13 @@ stepforward <- function(y, x, data, alpha) {
     next.up <- setdiff(x, terms)[which.max(abs(correlations))]
     
     # Monitor the steps
-    traced[[count]] <- list(steps = data.frame('Beta' = coef(new.fit),
-                                              'Coefficient' = names(coef(new.fit))),
-                           next.up = next.up,
-                           model.p = model.p,
-                           f.p = f.p,
-                           model = summary(new.fit))
+    steps <- data.frame('Beta' = coef(new.fit)[-1],
+                        'Coefficient' = names(coef(new.fit)[-1]))
+    traced[[count]] <- list(steps = steps,
+                            next.up = next.up,
+                            model.p = model.p,
+                            f.p = f.p,
+                            model = summary(new.fit))
     
     # Prep for next iteration
     terms <- c(terms, next.up)

@@ -57,11 +57,20 @@ shinyServer(function(input, output) {
     scaling.max <- max(sapply(traced(), function(x) {max(x$steps$Beta)}))
     scaling.min <- min(sapply(traced(), function(x) {min(x$steps$Beta)}))
     df.b <- traced()[[input$index]][[1]]
-    b <- ggplot(data = df.b, 
+    if (input$index != length(traced())) {
+      pad <- data.frame('Beta' = 0,
+                        'Coefficient' = setdiff(tail(traced(), 1)[[1]][[1]]$Coefficient, 
+                                                df.b$Coefficient))
+      df.b <- rbind(df.b, pad)
+    }
+    df.b$Coefficient <- factor(df.b$Coefficient, 
+                               levels = as.character(df.b$Coefficient))
+    b <- ggplot(data = df.b,
                 aes(x = Coefficient,
                     y = Beta)) + 
       geom_bar(stat = 'identity',
-               fill = 'darkblue') + 
+               fill = '#2075c7',
+               colour = '#2075c7') + 
       ylim(scaling.min, scaling.max) + 
       geom_hline(yintercept = 0) +
       coord_flip()
@@ -73,9 +82,10 @@ shinyServer(function(input, output) {
     p <- ggplot(data = df.p,
                 aes(x = seq_along(P.value), 
                     y = P.value)) +
-      geom_line(colour = 'red',
-                size = 3) +
-      coord_cartesian(ylim = c(-alpha()/100, alpha()))
+      geom_line(colour = '#ff4444',
+                size = 2) +
+      geom_hline(yintercept = alpha())
+    coord_cartesian(ylim = c(-alpha()/100, alpha() + alpha()/100))
     print(p)
   })
   

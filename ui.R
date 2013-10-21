@@ -10,9 +10,9 @@ shinyUI(pageWithSidebar(
     uiOutput('dependent'),
     uiOutput('independents')),
   mainPanel(
-    h4('Betas for the current iteration'),
+    h4('Betas'),
     plotOutput('betaplot'),
-    h4('P value progression'),
+    h4('F-tests'),
     plotOutput('pplot'),
     withTags(div(class='row-fluid',
                  div(class='span3',
