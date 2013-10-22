@@ -1,6 +1,6 @@
 library(shiny)
 customSidebar <- function(...) {
-  div(class = 'span2', tags$form(class = 'well', ...))
+  div(class = 'span3', tags$form(class = 'well', ...))
 }
 
 shinyUI(pageWithSidebar(
@@ -14,8 +14,8 @@ shinyUI(pageWithSidebar(
     uiOutput('independents')),
   mainPanel(
     withTags(div(class='row-fluid',
-                 div(class='span9',
-                     h4('Betas'),
+                 div(class='span8',
+                     h4('Coefficients'),
                      plotOutput('betaplot')),
                  div(class='span3', 
                      h4('Current model'),

@@ -76,6 +76,9 @@ shinyServer(function(input, output) {
       ylim(scaling.min, scaling.max) + 
       geom_hline(yintercept = 0) +
       xlab(NULL) +
+      theme(axis.text.y = element_text(size = 14,
+                                       colour = 'black'),
+            axis.ticks = element_line(size = 0)) +
       coord_flip() 
       #theme_tufte(ticks = F,
       #            base_size = 16)
@@ -89,11 +92,12 @@ shinyServer(function(input, output) {
                     y = P.value)) +
       geom_line(colour = '#ff4444',
                 size = 2) +
-      geom_hline(yintercept = alpha()) +
-      opts(axis.text.y = theme_text(angle=90, hjust=1)) +
-      xlab('Iteration')
-      #theme_tufte(ticks = F,
-      #            base_size = 16)
+      geom_hline(yintercept = alpha(),
+                 linetype = 'dashed') +
+      xlab('Iteration') +
+      ylab('P-value') +
+      theme(axis.title.y = element_text(angle = 0)) +
+      scale_x_discrete()
     print(p)
   })
   
