@@ -9,10 +9,10 @@ All you have to do to run this visualization is open R and type these three line
 
 ##Future features:
 
-*Ability to upload a csv.
+* Ability to upload a csv.
 
-*Tracking of model F-test p-value in addition to the currently implemented Restricted F-test p-value.
+* Tracking of model F-test p-value in addition to the currently implemented Restricted F-test p-value.
 
-*Toggle for showing the Beta coefficient for the intercept term / the initial null model iteration.
+* Toggle for showing the Beta coefficient for the intercept term / the initial null model iteration.
 
-*Isolate reactive endpoints to avoid error messages while page is loading.
+* Isolate reactive endpoints to avoid error messages while page is loading.
