@@ -1,6 +1,8 @@
 #### Load data, functions, and packages ####
 library(shiny)
 library(ggplot2)
+library(extrafont)
+library(ggthemes)
 source('stepwise.R')
 bodyfat <- dget('bodyfat.dput')
 
@@ -73,7 +75,10 @@ shinyServer(function(input, output) {
                colour = '#2075c7') + 
       ylim(scaling.min, scaling.max) + 
       geom_hline(yintercept = 0) +
-      coord_flip()
+      xlab(NULL) +
+      coord_flip() 
+      #theme_tufte(ticks = F,
+      #            base_size = 16)
     print(b)
   })
   
@@ -84,8 +89,11 @@ shinyServer(function(input, output) {
                     y = P.value)) +
       geom_line(colour = '#ff4444',
                 size = 2) +
-      geom_hline(yintercept = alpha())
-    coord_cartesian(ylim = c(-alpha()/100, alpha() + alpha()/100))
+      geom_hline(yintercept = alpha()) +
+      opts(axis.text.y = theme_text(angle=90, hjust=1)) +
+      xlab('Iteration')
+      #theme_tufte(ticks = F,
+      #            base_size = 16)
     print(p)
   })
   
