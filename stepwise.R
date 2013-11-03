@@ -13,16 +13,16 @@ parcor <- function(x, y, data, covariates) {
   return(cor(x.resid, y.resid))
 }
 
-stepforward <- function(y, x, data, alpha) {
-  count <- 1
-  f.p <- 0
+stepforward <- function(y, x, data, alpha, intercept = FALSE) {
   terms <- NULL
+  count <- 1
   
   # Initialization with the null model
   new.fit <- lm(reformulate(response = y,
                             termlabels = '1'),
                 data = data)
-  model.p <- anova(new.fit)$'Pr(>F)'[2]
+  model.p <- NA
+  anova.p <- NA
   correlations <- sapply(setdiff(x, terms),
                          parcor,
                          y = y,
@@ -32,18 +32,28 @@ stepforward <- function(y, x, data, alpha) {
   
   # Trace the steps
   traced <- list()
+  if (intercept == TRUE) {
+    steps <- data.frame('Beta' = coef(new.fit),
+                        'Coefficient' = names(coef(new.fit)))
+    traced[[count]] <- list(steps = steps,
+                            next.up = next.up,
+                            model.p = model.p,
+                            anova.p = anova.p,
+                            model = summary(new.fit))
+    count <- 2
+  }
   
   # Prep for next iteration
   terms <- next.up
   old.fit <- new.fit
   
   # Add next-most correlated variable and see if it helps the model
-  while (f.p < alpha) {
+  while (is.na(anova.p) | anova.p < alpha) {
     new.fit <- lm(reformulate(response = y,
                               termlabels = terms),
                   data = data)
-    f.p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
-    model.p <- anova(new.fit)$'Pr(>F)'[2]
+    anova.p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
+    model.p <- 1 - pnorm(summary(new.fit)$fstatistic[[1]], summary(new.fit)$fstatistic[[2]])
     correlations <- sapply(setdiff(x, terms),
                            parcor,
                            y = y,
@@ -52,12 +62,17 @@ stepforward <- function(y, x, data, alpha) {
     next.up <- setdiff(x, terms)[which.max(abs(correlations))]
     
     # Monitor the steps
-    steps <- data.frame('Beta' = coef(new.fit)[-1],
-                        'Coefficient' = names(coef(new.fit)[-1]))
+    if (intercept == TRUE) {
+      steps <- data.frame('Beta' = coef(new.fit),
+                          'Coefficient' = names(coef(new.fit)))
+    } else {
+      steps <- data.frame('Beta' = coef(new.fit)[-1],
+                          'Coefficient' = names(coef(new.fit)[-1]))
+    }
     traced[[count]] <- list(steps = steps,
                             next.up = next.up,
                             model.p = model.p,
-                            f.p = f.p,
+                            anova.p = anova.p,
                             model = summary(new.fit))
     
     # Prep for next iteration
