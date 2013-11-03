@@ -1,5 +1,5 @@
 #shiny_stepwise
-See this app live at spark.rstudio.com/hanszenite/shiny_stepwise
+See this app live at http://spark.rstudio.com/hanszenite/shiny_stepwise
 
 ##Future features:
 
