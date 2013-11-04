@@ -1,16 +1,20 @@
 parcor <- function(x, y, data, covariates) {
   covariates <- subset(covariates, covariates != x & covariates != y)
-  if (is.null(covariates)) {return(cor(data[x], data[y]))}
+  if (is.null(covariates)) {
+    return(cor(as.numeric(data[[x]]), as.numeric(data[[y]]), 
+               use = 'complete.obs'))}
   
-  x.resid <- lm(reformulate(response = x, 
+  x.resid <- resid(lm(reformulate(response = x, 
                             termlabels = covariates),
-                data = data)$residuals
+                data = data,
+                na.action = na.exclude))
   
-  y.resid <- lm(reformulate(response = y,
+  y.resid <- resid(lm(reformulate(response = y,
                             termlabels = covariates),
-                data = data)$residuals
+                data = data,
+                na.action = na.exclude))
   
-  return(cor(x.resid, y.resid))
+  return(cor(x.resid, y.resid, use = 'complete.obs'))
 }
 
 stepforward <- function(y, x, data, alpha, intercept = FALSE) {
@@ -20,7 +24,7 @@ stepforward <- function(y, x, data, alpha, intercept = FALSE) {
   # Initialization with the null model
   new.fit <- lm(reformulate(response = y,
                             termlabels = '1'),
-                data = data)
+                data = data[complete.cases(data[c(y, x)]),])
   model.p <- NA
   anova.p <- NA
   correlations <- sapply(setdiff(x, terms),
@@ -35,11 +39,14 @@ stepforward <- function(y, x, data, alpha, intercept = FALSE) {
   if (intercept == TRUE) {
     steps <- data.frame('Beta' = coef(new.fit),
                         'Coefficient' = names(coef(new.fit)))
+    candidates = data.frame('Partial' = abs(correlations),
+                            'Variable' = x)
     traced[[count]] <- list(steps = steps,
                             next.up = next.up,
                             model.p = model.p,
                             anova.p = anova.p,
-                            model = summary(new.fit))
+                            model = summary(new.fit),
+                            candidates = candidates)
     count <- 2
   }
   
@@ -51,7 +58,7 @@ stepforward <- function(y, x, data, alpha, intercept = FALSE) {
   while (is.na(anova.p) | anova.p < alpha) {
     new.fit <- lm(reformulate(response = y,
                               termlabels = terms),
-                  data = data)
+                  data = data[complete.cases(data[c(y, x)]),])
     anova.p <- anova(old.fit, new.fit)$'Pr(>F)'[2]
     model.p <- 1 - pnorm(summary(new.fit)$fstatistic[[1]], summary(new.fit)$fstatistic[[2]])
     correlations <- sapply(setdiff(x, terms),
@@ -69,11 +76,14 @@ stepforward <- function(y, x, data, alpha, intercept = FALSE) {
       steps <- data.frame('Beta' = coef(new.fit)[-1],
                           'Coefficient' = names(coef(new.fit)[-1]))
     }
+    candidates = data.frame('Partial' = abs(correlations),
+                            'Variable' = setdiff(x,terms))
     traced[[count]] <- list(steps = steps,
                             next.up = next.up,
                             model.p = model.p,
                             anova.p = anova.p,
-                            model = summary(new.fit))
+                            model = summary(new.fit),
+                            candidates = candidates)
     
     # Prep for next iteration
     terms <- c(terms, next.up)
