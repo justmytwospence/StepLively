@@ -50,16 +50,20 @@ shinyServer(function(input, output) {
   
   # Perform the step-wise regression
   traced <- reactive({
-    stepforward(y = input$dependent, 
-                x = setdiff(input$independents, input$dependent),
-                data = data(),
-                alpha = alpha(),
-                intercept = input$intercept)
+    if(input$goButton == 0) {
+      return(c(NA, NA))
+    }
+    isolate(
+      stepforward(y = input$dependent, 
+                  x = setdiff(input$independents, input$dependent),
+                  data = data(),
+                  alpha = alpha(),
+                  intercept = input$intercept))
   })
   
   # Set the slider bar range according to the number of iterations
   output$sliderUI <- renderUI({ 
-    sliderInput("index", label = "Iteration:", 
+    sliderInput("index", label = 'Iteration', 
                 min = 1, max = length(traced()), step = 1, value = 1)
   })
   

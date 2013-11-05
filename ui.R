@@ -6,11 +6,19 @@ customSidebar <- function(...) {
 uploadBar <- function(...) {
   div(class = 'span12', style = 'min-width: 400px', tags$form(class = 'well', ...))
 }
+actionButton <- function(inputId, label, btn.style = "" , css.class = "") {
+  if ( btn.style %in% c("primary","info","success","warning","danger","inverse","link")) {
+    btn.css.class <- paste("btn",btn.style,sep="-")
+  } else btn.css.class = ""
+  tags$button(id=inputId, type="button", class=paste("btn action-button",btn.css.class,css.class,collapse=" "), label)
+}
 
 shinyUI(pageWithSidebar(
   headerPanel("Step-wise Regression"),
   customSidebar(
-    uiOutput('sliderUI'),
+    actionButton("goButton", "Step Lively", css.class = 'btn-primary btn-block'),
+    conditionalPanel(condition = 'input.goButton != 0', uiOutput('sliderUI')),
+    br(),
     selectInput("alpha", label = "Alpha:", choices = c(".05", ".01", ".001")),
     uiOutput('dependent'),
     checkboxInput('intercept', label = 'Show intercept', value = FALSE),
