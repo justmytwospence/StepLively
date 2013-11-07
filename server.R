@@ -1,21 +1,20 @@
 #### Load data, functions, and packages ####
-library(shiny)
-library(ggplot2)
-library(plyr)
+require(shiny)
+require(ggplot2)
 source('stepwise.R')
 
 #### Define server logic ####
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   # Use the provided .csv
   data <- reactive({
     inFile <- input$file
     if (is.null(inFile))
       return(dget('bodyfat.dput'))
-    read.csv(inFile$datapath, header = input$header, sep = input$sep,
-             stringsAsFactors = TRUE)
+    read.csv(inFile$datapath, header = input$header, sep = input$sep, quote = input$quote)
   })
   
+  # Display the data
   output$data <- renderTable({
     data()
   })
@@ -31,7 +30,7 @@ shinyServer(function(input, output) {
   # Display a dropdown menu for choosing the dependent variable,
   # also according to variables present in the dataset
   output$dependent <- renderUI({
-    colnames <- names(data())
+    colnames <- names(data())[!sapply(data(), is.character)]
     selectInput("dependent", 
                 "Dependent variable:", 
                 choices = colnames,
@@ -41,7 +40,7 @@ shinyServer(function(input, output) {
   # Display the potential variable checkboxes according to the
   # variables that are present in the dataset
   output$independents <- renderUI({
-    colnames <- names(data())
+    colnames <- names(data())[!sapply(data(), is.character)] 
     checkboxGroupInput("independents", 
                        "Prospective independent variables:", 
                        choices  = setdiff(colnames, input$dependent),
@@ -51,8 +50,16 @@ shinyServer(function(input, output) {
   # Perform the step-wise regression
   traced <- reactive({
     if(input$goButton == 0) {
-      return(c(NA, NA))
-    }
+      return(c(NA, NA))}
+    withProgress(session, min=1, max=15, expr={
+      for(i in 1:15) {
+        setProgress(message = 'Performing step-wise regression',
+                    detail = 'This may take a moment, but it won\'t hurt a bit',
+                    value=i)
+        print(i)
+        Sys.sleep(0.1)
+      }
+    })
     isolate(
       stepforward(y = input$dependent, 
                   x = setdiff(input$independents, input$dependent),
@@ -63,8 +70,9 @@ shinyServer(function(input, output) {
   
   # Set the slider bar range according to the number of iterations
   output$sliderUI <- renderUI({ 
-    sliderInput("index", label = 'Iteration', 
-                min = 1, max = length(traced()), step = 1, value = 1)
+    sliderInput("index", label = '', 
+                min = 1, max = length(traced()), step = 1, value = 1,
+                animate = animationOptions(interval = 2000))
   })
   
   # Create a bar plot of the beta values 
@@ -90,40 +98,12 @@ shinyServer(function(input, output) {
         ylim(scaling.min, scaling.max) + 
         geom_hline(yintercept = 0) +
         xlab(NULL) +
+        theme_bw() +
         theme(axis.text.y = element_text(size = 14,
                                          colour = 'black'),
               axis.ticks = element_line(size = 0)) +
-        coord_flip() 
+        coord_flip()
       print(b)},
-        silent = TRUE)
-  })
-  
-  output$pplot <- renderPlot({
-    try({
-      df.anova <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$anova.p}),
-                             Type = 'ANOVA',
-                             Count = c(1:input$index))
-      df.model <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$model.p}),
-                             Type = 'Model',
-                             Count = c(1:input$index))
-      df.p <- rbind(df.anova, df.model)
-      p <- ggplot(data = df.p,
-                  aes(x = Count,
-                      y = P.value,
-                      colour = Type,
-                      linetype = Type)) +
-        geom_line(size = 2,
-                  alpha = .7) +
-        geom_hline(yintercept = alpha(),
-                   linetype = 'dashed') +
-        geom_point(size = 4) +
-        scale_color_manual(values = c('#2075c7', '#CC0000')) +
-        xlab('Iteration') +
-        ylab('P-value') +
-        theme(axis.title.y = element_text(angle = 0),
-              legend.key = theme_blank()) +
-        scale_x_discrete()
-      print(p)},
         silent = TRUE)
   })
   
@@ -143,12 +123,44 @@ shinyServer(function(input, output) {
         geom_hline(yintercept = 0) +
         xlab(NULL) +
         ylab("Partial Correlation") +
+        theme_bw() +
         theme(axis.text.y = element_text(size = 14,
                                          colour = 'black'),
               axis.ticks = element_line(size = 0),
               legend.position = 'none') +
-        coord_flip() 
+        coord_flip()
       print(n)},
+        silent = TRUE)
+  })
+  
+  output$pplot <- renderPlot({
+    try({
+      df.anova <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$anova.p}),
+                             Type = 'ANOVA',
+                             Count = c(1:input$index))
+      df.model <- data.frame(P.value = sapply(traced()[1:input$index], function(x) {x$model.p}),
+                             Type = 'Model',
+                             Count = c(1:input$index))
+      df.p <- rbind(df.anova, df.model)
+      p <- ggplot(data = df.p,
+                  aes(x = Count,
+                      y = P.value,
+                      colour = Type,
+                      linetype = Type)) +
+        geom_line(size = 2, show_guide = FALSE) +
+        geom_hline(yintercept = alpha(),
+                   linetype = 'dashed') +
+        geom_point(size = 4) +
+        scale_color_manual(values = c('#2075c7', '#CC0000')) +
+        scale_x_discrete() +
+        xlab('Iteration') +
+        ylab('P-value') +
+        theme_bw() +
+        theme(axis.title.y = element_text(angle = 0),
+              legend.position = 'bottom',
+              legend.direction = 'horizontal',
+              legend.key = theme_blank())
+      print(p)},
         silent = TRUE)
   })
   
@@ -166,16 +178,18 @@ shinyServer(function(input, output) {
                       y = R.squared,
                       colour = Type,
                       linetype = Type)) +
-        geom_line(size = 2,
-                  alpha = .7) +
+        geom_line(size = 2, show_guide = FALSE) +
         geom_point(size = 4) +
         scale_color_manual(values = c('#2075c7', '#CC0000')) +
+        scale_x_discrete() +
         ylim(c(0,1)) +
         xlab('Iteration') +
         ylab('R-squared') +
+        theme_bw() +
         theme(axis.title.y = element_text(angle = 0),
-              legend.key = theme_blank()) +
-        scale_x_discrete()
+              legend.position = 'bottom',
+              legend.direction = 'horizontal',
+              legend.key = theme_blank())
       print(p)},
         silent = TRUE)
   })

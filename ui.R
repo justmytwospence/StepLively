@@ -1,55 +1,84 @@
 library(shiny)
+library(shinyIncubator)
 
 customSidebar <- function(...) {
   div(class = 'span3', style = 'min-width: 275px', tags$form(class = 'well', ...))
 }
 uploadBar <- function(...) {
-  div(class = 'span12', style = 'min-width: 400px', tags$form(class = 'well', ...))
+  div(class = 'span12', tags$form(class = 'well', ...))
 }
 actionButton <- function(inputId, label, btn.style = "" , css.class = "") {
   if ( btn.style %in% c("primary","info","success","warning","danger","inverse","link")) {
-    btn.css.class <- paste("btn",btn.style,sep="-")
+    btn.css.class <- paste("btn", btn.style, sep="-")
   } else btn.css.class = ""
   tags$button(id=inputId, type="button", class=paste("btn action-button",btn.css.class,css.class,collapse=" "), label)
 }
 
 shinyUI(pageWithSidebar(
-  headerPanel("Step-wise Regression"),
+  headerPanel("StepLively"),
   customSidebar(
-    actionButton("goButton", "Step Lively", css.class = 'btn-primary btn-block'),
+    actionButton("goButton", "Execute", css.class = 'btn-primary btn-block'),
     conditionalPanel(condition = 'input.goButton != 0', uiOutput('sliderUI')),
-    br(),
+    div(br()),
     selectInput("alpha", label = "Alpha:", choices = c(".05", ".01", ".001")),
     uiOutput('dependent'),
-    checkboxInput('intercept', label = 'Show intercept', value = FALSE),
+    checkboxInput('intercept', label = 'Show intercept (requires re-execution)', value = FALSE),
     uiOutput('independents')),
   mainPanel(
+    progressInit(),
     tabsetPanel(tabPanel("Variable Selection", 
-                         h4('Coefficients'),
-                         plotOutput('bplot'),
-                         h4('Next Up...'),
-                         plotOutput('nplot')),
+                         conditionalPanel(condition = 'input.goButton == 0', div('Click the "Execute" button to StepLively!', 
+                                                                                 class = 'alert alert-block')),
+                         conditionalPanel(condition = 'input.goButton != 0',
+                                          div(class = 'row-fluid',
+                                              div(class = 'span6',
+                                                  h4('Coefficients'),
+                                                  plotOutput('bplot', height = '550px')),
+                                              div(class = 'span6',
+                                                  h4('Partial Correlations'),
+                                                  plotOutput('nplot', height = '550px'))))),
                 tabPanel("Model Evaluation",
-                         h4('F-tests'),
-                         plotOutput('pplot'),
-                         h4('R-squared'),
-                         plotOutput('rplot')),
+                         conditionalPanel(condition = 'input.goButton == 0', div('Click the "Execute" button to StepLively!', 
+                                                                                 class = 'alert alert-block')),
+                         conditionalPanel(condition = 'input.goButton != 0',
+                                          div(class = 'row-fluid',
+                                              div(class = 'span6',
+                                                  h4('F-tests'),
+                                                  plotOutput('pplot', 
+                                                             height = '550px')),
+                                              div(class = 'span6', 
+                                                  h4('R-squared'),
+                                                  plotOutput('rplot', 
+                                                             height = '550px'))))),
                 tabPanel("Current Model",
-                         tableOutput('model')),
+                         conditionalPanel(condition = 'input.goButton == 0', div('Click the "Execute" button to StepLively!', 
+                                                                                 class = 'alert alert-block')),
+                         conditionalPanel(condition = 'input.goButton != 0', 
+                                          tableOutput('model'))),
                 tabPanel("Data",
                          uploadBar(
-                           withTags(div(class='row-fluid',
-                                        div(class='span4', 
-                                            fileInput('file', 'Upload your own CSV', 
-                                                      multiple = FALSE, 
-                                                      accept = NULL)),
-                                        div(class='span2', 
-                                            radioButtons('sep', 'Separator',
-                                                         c(Comma=',',
-                                                           Semicolon=';',
-                                                           Tab='\t'),
-                                                         'Comma')),
-                                        div(class='span2',
-                                            checkboxInput('header', 'Header', TRUE))))),
-                         tableOutput('data'))))
+                           div(class = 'row-fluid',
+                               div(class = 'span4', 
+                                   fileInput('file', 'Upload your own data', 
+                                             multiple = FALSE, 
+                                             accept = NULL)),
+                               div(class = 'span2', 
+                                   radioButtons('sep', 'Separator',
+                                                c(Comma=',',
+                                                  Semicolon=';',
+                                                  Tab='\t'),
+                                                'Comma')),
+                               div(class = 'span2', 
+                                   radioButtons('quote', 'Quote',
+                                                c(None='',
+                                                  'Double Quote'='"',
+                                                  'Single Quote'="'"),
+                                                'Double Quote')),
+                               div(class = 'span2', 
+                                   checkboxInput('header', 'Header', TRUE)))),
+                         tableOutput('data')),
+                tabPanel("About",
+                         div(tags$p('Created by Spencer Boucher, MS candidate in data analytics.')),
+                         div(tags$a(href = 'http://spencerboucher.com', 'spencerboucher.com')),
+                         div(tags$a(href = 'http://github.com/justmytwospence/StepLively', 'Find the source code here.')))))
 ))
