@@ -15,7 +15,7 @@ shinyServer(function(input, output, session) {
   })
   
   # Display the data
-  output$data <- renderTable({
+  output$data <- renderDataTable({
     data()
   })
   

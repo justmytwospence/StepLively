@@ -76,9 +76,10 @@ shinyUI(pageWithSidebar(
                                                 'Double Quote')),
                                div(class = 'span2', 
                                    checkboxInput('header', 'Header', TRUE)))),
-                         tableOutput('data')),
+                         dataTableOutput('data')),
                 tabPanel("About",
+                         p(
                          div(tags$p('Created by Spencer Boucher, MS candidate in data analytics.')),
                          div(tags$a(href = 'http://spencerboucher.com', 'spencerboucher.com')),
-                         div(tags$a(href = 'http://github.com/justmytwospence/StepLively', 'Find the source code here.')))))
+                         div(tags$a(href = 'http://github.com/justmytwospence/StepLively', 'Find the source code here.'))))))
 ))
