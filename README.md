@@ -1,15 +1,13 @@
-#shiny_stepwise
+#StepLively
 See this app live at http://steplively.spencerboucher.com
 
 ##Future features:
 
-* Make uploading csv robust to various datatypes (factor, etc.)
+* Make uploading csv more robust to various datatypes (factor, etc.)
 
 * Remove intercept dependency on running the regression.
 
 * Don't display strings as variable choices.
-
-* Shrink the size of the plots to fit the screen.
 
 * Unkludgeify the damn slider input.
 
