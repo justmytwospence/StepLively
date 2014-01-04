@@ -1,5 +1,5 @@
 #StepLively
-See this app live at http://steplively.spencerboucher.com
+See this app live at http://justmytwospence.shinyapps.io/StepLively/
 
 ##Future features:
 
